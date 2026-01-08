@@ -1,10 +1,13 @@
 import React, { useEffect, useState } from 'react';
 import axios from '../axios';
+import YouTube from 'react-youtube';
+import movieTrailer from 'movie-trailer';
 
 const base_url = "https://image.tmdb.org/t/p/original/";
 
 function Row({ title, fetchUrl, isLargeRow }) {
     const [movies, setMovies] = useState([]);
+    const [trailerUrl, setTrailerUrl] = useState("");
 
     useEffect(() => {
         async function fetchData() {
@@ -14,6 +17,27 @@ function Row({ title, fetchUrl, isLargeRow }) {
         }
         fetchData();
     }, [fetchUrl]);
+
+    const opts = {
+        height: "390",
+        width: "100%",
+        playerVars: {
+            autoplay: 1,
+        },
+    };
+
+    const handleClick = (movie) => {
+        if (trailerUrl) {
+            setTrailerUrl("");
+        } else {
+            movieTrailer(movie?.name || movie?.title || movie?.original_name || "")
+                .then((url) => {
+                    const urlParams = new URLSearchParams(new URL(url).search);
+                    setTrailerUrl(urlParams.get("v"));
+                })
+                .catch((error) => console.log(error));
+        }
+    };
 
     return (
         <div className="ml-5 text-white">
@@ -25,9 +49,10 @@ function Row({ title, fetchUrl, isLargeRow }) {
                     (!isLargeRow && movie.backdrop_path)) && (
                         <img
                             key={movie.id}
+                            onClick={() => handleClick(movie)}
                             className={`w-full object-contain transition-transform duration-450 hover:scale-105 ${
                                 isLargeRow ? "max-h-80" : "max-h-40"
-                            } mr-2.5 rounded-sm`}
+                            } mr-2.5 rounded-sm cursor-pointer`}
                             src={`${base_url}${
                                 isLargeRow ? movie.poster_path : movie.backdrop_path
                             }`}
@@ -36,6 +61,7 @@ function Row({ title, fetchUrl, isLargeRow }) {
                     )
                 ))}
             </div>
+            {trailerUrl && <YouTube videoId={trailerUrl} opts={opts} />}
         </div>
     );
 }
